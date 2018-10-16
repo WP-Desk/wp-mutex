@@ -44,13 +44,13 @@ class WordpressPostMutex
     /**
      * Factory method
      *
-     * @param WC_Order $order Order for which mutex will be prepared
+     * @param \WC_Order $order Order for which mutex will be prepared
      * @param string $lock_name Name of the resource to lock
      * @param int $timeout Lock timeout in seconds
      *
      * @return WordpressPostMutex
      */
-    public static function fromOrder(WC_Order $order, $lock_name = '_mutex', $timeout = 5)
+    public static function fromOrder(\WC_Order $order, $lock_name = '_mutex', $timeout = 5)
     {
         return new self(wpdesk_get_order_id($order), $lock_name, $timeout);
     }
