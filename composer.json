@@ -7,6 +7,10 @@
     "minimum-stability": "stable",
     "authors": [
         {
+            "name": "duszczo",
+            "email": "dyszczo@wpdesk.net"
+        },
+        {
             "name": "grola",
             "email": "grola@wpdesk.net"
         }
@@ -25,8 +29,7 @@
         "wimg/php-compatibility": "^8"
     },
     "autoload": {
-		"psr-4": {"WPDesk\\Notice\\": "src/WPDesk/Notice/"},
-        "files": ["src/WPDesk/functions.php"]
+		"psr-4": {"WPDesk\\Mutex\\": "src/WPDesk/Mutex/"}
     },
     "autoload-dev": {
     },
