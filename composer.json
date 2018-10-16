@@ -7,14 +7,16 @@
     "minimum-stability": "stable",
     "authors": [
         {
+            "name": "dyszczo",
+            "email": "dyszczo@wpdesk.net"
+        },
+        {
             "name": "grola",
             "email": "grola@wpdesk.net"
         }
     ],
     "require": {
-        "php": ">=5.5",
-        "wpdesk/wp-basic-requirements": "dev-master",
-	    "wpdesk/wp-builder": "dev-master"
+        "php": ">=5.5"
 	},
     "require-dev": {
         "phpunit/phpunit": "<7",
@@ -25,8 +27,7 @@
         "wimg/php-compatibility": "^8"
     },
     "autoload": {
-		"psr-4": {"WPDesk\\Notice\\": "src/WPDesk/Notice/"},
-        "files": ["src/WPDesk/functions.php"]
+		"psr-4": {"WPDesk\\Mutex\\": "src/WPDesk/Mutex/"}
     },
     "autoload-dev": {
     },
