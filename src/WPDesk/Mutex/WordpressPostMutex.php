@@ -52,7 +52,7 @@ class WordpressPostMutex
      */
     public static function fromOrder(\WC_Order $order, $lock_name = '_mutex', $timeout = 5)
     {
-        return new self($order->get_id(), $lock_name, $timeout);
+        return new self(wpdesk_get_order_id($order), $lock_name, $timeout);
     }
 
     /**
