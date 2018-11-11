@@ -27,7 +27,7 @@
         "wimg/php-compatibility": "^8"
     },
     "autoload": {
-		"psr-4": {"WPDesk\\Mutex\\": "src/WPDesk/Mutex/"}
+		"psr-4": {"WPDesk\\Mutex\\": "src/"}
     },
     "autoload-dev": {
     },

@@ -1,10 +1,10 @@
 <?php
 
-use WPDesk\Mutex\WordpressPostMutex;
+use WPDesk\Mutex\WordpressMySQLLockMutex;
 
 require_once 'wpdbTrait.php';
 
-class TestWordpressPostMutex extends WP_UnitTestCase
+class TestWordpressMySQLLockMutex extends WP_UnitTestCase
 {
 
     use wpdbTrait;
@@ -14,9 +14,9 @@ class TestWordpressPostMutex extends WP_UnitTestCase
         $order = new WC_Order();
         $order->save();
 
-        $fromOrder = WordpressPostMutex::fromOrder($order);
+        $fromOrder = \WPDesk\Mutex\WordpressMySQLLockMutex::fromOrder($order);
 
-        $this->assertInstanceOf(WordpressPostMutex::class, $fromOrder);
+        $this->assertInstanceOf(WordpressMySQLLockMutex::class, $fromOrder);
     }
 
     public function testAcquireLock()
@@ -24,7 +24,7 @@ class TestWordpressPostMutex extends WP_UnitTestCase
         $order = new WC_Order();
         $order->save();
 
-        $fromOrder = WordpressPostMutex::fromOrder($order);
+        $fromOrder = WordpressMySQLLockMutex::fromOrder($order);
 
         $this->assertTrue($fromOrder->acquireLock());
 
@@ -36,28 +36,28 @@ class TestWordpressPostMutex extends WP_UnitTestCase
         $order = new WC_Order();
         $order->save();
 
-        $fromOrder = WordpressPostMutex::fromOrder($order);
+        $fromOrder = WordpressMySQLLockMutex::fromOrder($order);
         $this->assertTrue($fromOrder->acquireLock());
 
         global $wpdb;
+
         $wpdb1 = $wpdb;
 
         $this->newWpdb();
+
         $wpdb2 = $wpdb;
 
-        $fromOrder2 = WordpressPostMutex::fromOrder($order);
+        $fromOrder2 = WordpressMySQLLockMutex::fromOrder($order);
         $this->assertFalse($fromOrder2->acquireLock());
 
         $wpdb = $wpdb1;
         $fromOrder->releaseLock();
-        $wpdb->query('COMMIT');
-
         $wpdb = $wpdb2;
         $this->assertTrue($fromOrder2->acquireLock());
+
         $fromOrder2->releaseLock();
 
         $wpdb = $wpdb1;
     }
-
 
 }

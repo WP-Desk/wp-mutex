@@ -2,23 +2,24 @@
 
 namespace WPDesk\Mutex;
 
-
-class WordpressPostMutex
+class WordpressPostMutex implements Mutex
 {
+
+    use WordpressWpdb;
 
     const LOCK_ID_DELIMITER = '_';
 
     /** @var int Post id */
     private $postId;
 
-    /** @var wpdb Database handle */
-    private $wpdb;
-
     /** @var string Name of the resource to lock */
     private $lockName;
 
     /** @var int Lock timeout in seconds */
     private $timeout;
+
+    /** @var int Wait for lock timeout in seconds */
+    private $waitForLockTimeout;
 
     /** @var string Unique lock id */
     private $lockId;
@@ -30,15 +31,14 @@ class WordpressPostMutex
      * @param string $lock_name Name of the resource to lock
      * @param int $timeout Lock timeout in seconds
      */
-    public function __construct($post_id, $lock_name = '_mutex', $timeout = 5)
+    public function __construct($post_id, $lock_name = '_mutex', $timeout = 5, $waitForLockTimeout = 5)
     {
-        global $wpdb;
-
-        $this->postId   = intval($post_id);
-        $this->wpdb     = $wpdb;
-        $this->lockName = $wpdb->_real_escape($lock_name);
-        $this->timeout  = intval($timeout);
-        $this->lockId   = uniqid('', true);
+        $wpdb                     = $this->getWpdb();
+        $this->postId             = intval($post_id);
+        $this->lockName           = $wpdb->_real_escape($lock_name);
+        $this->timeout            = intval($timeout);
+        $this->waitForLockTimeout = intval($waitForLockTimeout);
+        $this->lockId             = uniqid('', true);
     }
 
     /**
@@ -63,12 +63,13 @@ class WordpressPostMutex
     private function getActiveLockId()
     {
         $delimiter = self::LOCK_ID_DELIMITER;
+        $wpdb      = $this->getWpdb();
 
         $sql = "
 SELECT 
 	meta_id, meta_value
 FROM 
-	{$this->wpdb->postmeta}
+	{$wpdb->postmeta}
 WHERE 
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND 
@@ -78,7 +79,7 @@ ORDER BY
 
         $lockId = null;
 
-        $colRowset = $this->wpdb->get_results($sql);
+        $colRowset = $wpdb->get_results($sql);
 
         $record = is_array($colRowset) ? reset($colRowset) : null;;
         if ( ! empty($record)) {
@@ -102,17 +103,17 @@ ORDER BY
     private function cleanUnusedLocks($used_lock)
     {
         $delimiter = self::LOCK_ID_DELIMITER;
+        $wpdb      = $this->getWpdb();
 
         $sql = "
 DELETE FROM 
-	{$this->wpdb->postmeta}
+	{$wpdb->postmeta}
 WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND
 	meta_value LIKE '{$this->lockId}{$delimiter}%' AND
-	meta_id <> $used_lock
-";
-        $this->wpdb->query($sql);
+	meta_id <> $used_lock";
+        $wpdb->query($sql);
     }
 
     /**
@@ -123,18 +124,23 @@ WHERE
     private function tryLock()
     {
         $lock_id = $this->lockId . self::LOCK_ID_DELIMITER;
+        $wpdb    = $this->getWpdb();
+
+        $show_errors    = $wpdb->hide_errors();
+        $lockTimeoutRow = $wpdb->get_row("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
+        $wpdb->query($wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($this->waitForLockTimeout)));
 
         $sql = "
 INSERT INTO
-	{$this->wpdb->postmeta}(`meta_key`, `post_id`, `meta_value`)
+	{$wpdb->postmeta}(`meta_key`, `post_id`, `meta_value`)
 VALUES(
 	'{$this->lockName}',
 	{$this->postId},
 	CONCAT('{$lock_id}', UNIX_TIMESTAMP() + {$this->timeout})
-);
-
-";
-        $this->wpdb->query($sql);
+)";
+        $wpdb->query($sql);
+        $wpdb->show_errors($show_errors);
+        $wpdb->query($wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($lockTimeoutRow->Value)));
     }
 
     /**
@@ -167,15 +173,15 @@ VALUES(
     public function releaseLock()
     {
         $delimiter = self::LOCK_ID_DELIMITER;
+        $wpdb      = $this->getWpdb();
         $sql       = "
 DELETE FROM 
-	{$this->wpdb->postmeta}
+	{$wpdb->postmeta}
 WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND 
-	meta_value LIKE '{$this->lockId}{$delimiter}%'
-";
-        $this->wpdb->query($sql);
+	meta_value LIKE '{$this->lockId}{$delimiter}%'";
+        $wpdb->query($sql);
     }
 }
 
