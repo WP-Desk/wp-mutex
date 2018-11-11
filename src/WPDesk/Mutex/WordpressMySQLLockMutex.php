@@ -20,8 +20,8 @@ class WordpressMySQLLockMutex implements Mutex
      */
     public function __construct($lockName = '_mutex', $waitForLockTimeout = 5)
     {
-        $wpdb                     = $this->getWpdb();
-        $this->lockName           = $wpdb->_real_escape($lockName);
+        $this->wpdb               = $this->getWpdbFromGlobal();
+        $this->lockName           = $this->wpdb->_real_escape($lockName);
         $this->waitForLockTimeout = intval($waitForLockTimeout);
     }
 
@@ -46,9 +46,9 @@ class WordpressMySQLLockMutex implements Mutex
      */
     public function acquireLock()
     {
-        $wpdb    = $this->getWpdb();
-        $lockRow = $wpdb->get_row(
-            $wpdb->prepare(
+        $this->wpdb = $this->getWpdbFromGlobal();
+        $lockRow    = $this->wpdb->get_row(
+            $this->wpdb->prepare(
                 'SELECT GET_LOCK(%s,%d) as lock_set',
                 array(
                     $this->lockName,
@@ -56,6 +56,7 @@ class WordpressMySQLLockMutex implements Mutex
                 )
             )
         );
+
         return 1 === intval($lockRow->lock_set);
     }
 
@@ -66,9 +67,9 @@ class WordpressMySQLLockMutex implements Mutex
      */
     public function releaseLock()
     {
-        $wpdb    = $this->getWpdb();
-        $wpdb->get_row(
-            $wpdb->prepare(
+        $this->wpdb = $this->getWpdbFromGlobal();
+        $this->wpdb->get_row(
+            $this->wpdb->prepare(
                 'SELECT RELEASE_LOCK(%s) as lock_released',
                 array(
                     $this->lockName,

@@ -33,9 +33,9 @@ class WordpressPostMutex implements Mutex
      */
     public function __construct($post_id, $lock_name = '_mutex', $timeout = 5, $waitForLockTimeout = 5)
     {
-        $wpdb                     = $this->getWpdb();
+        $this->wpdb               = $this->getWpdbFromGlobal();
         $this->postId             = intval($post_id);
-        $this->lockName           = $wpdb->_real_escape($lock_name);
+        $this->lockName           = $this->wpdb->_real_escape($lock_name);
         $this->timeout            = intval($timeout);
         $this->waitForLockTimeout = intval($waitForLockTimeout);
         $this->lockId             = uniqid('', true);
@@ -63,13 +63,12 @@ class WordpressPostMutex implements Mutex
     private function getActiveLockId()
     {
         $delimiter = self::LOCK_ID_DELIMITER;
-        $wpdb      = $this->getWpdb();
 
         $sql = "
 SELECT 
 	meta_id, meta_value
 FROM 
-	{$wpdb->postmeta}
+	{$this->wpdb->postmeta}
 WHERE 
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND 
@@ -79,7 +78,7 @@ ORDER BY
 
         $lockId = null;
 
-        $colRowset = $wpdb->get_results($sql);
+        $colRowset = $this->wpdb->get_results($sql);
 
         $record = is_array($colRowset) ? reset($colRowset) : null;;
         if ( ! empty($record)) {
@@ -103,17 +102,16 @@ ORDER BY
     private function cleanUnusedLocks($used_lock)
     {
         $delimiter = self::LOCK_ID_DELIMITER;
-        $wpdb      = $this->getWpdb();
 
         $sql = "
 DELETE FROM 
-	{$wpdb->postmeta}
+	{$this->wpdb->postmeta}
 WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND
 	meta_value LIKE '{$this->lockId}{$delimiter}%' AND
 	meta_id <> $used_lock";
-        $wpdb->query($sql);
+        $this->wpdb->query($sql);
     }
 
     /**
@@ -124,23 +122,22 @@ WHERE
     private function tryLock()
     {
         $lock_id = $this->lockId . self::LOCK_ID_DELIMITER;
-        $wpdb    = $this->getWpdb();
 
-        $show_errors    = $wpdb->hide_errors();
-        $lockTimeoutRow = $wpdb->get_row("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
-        $wpdb->query($wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($this->waitForLockTimeout)));
+        $show_errors    = $this->wpdb->hide_errors();
+        $lockTimeoutRow = $this->wpdb->get_row("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
+        $this->wpdb->query($this->wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($this->waitForLockTimeout)));
 
         $sql = "
 INSERT INTO
-	{$wpdb->postmeta}(`meta_key`, `post_id`, `meta_value`)
+	{$this->wpdb->postmeta}(`meta_key`, `post_id`, `meta_value`)
 VALUES(
 	'{$this->lockName}',
 	{$this->postId},
 	CONCAT('{$lock_id}', UNIX_TIMESTAMP() + {$this->timeout})
 )";
-        $wpdb->query($sql);
-        $wpdb->show_errors($show_errors);
-        $wpdb->query($wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($lockTimeoutRow->Value)));
+        $this->wpdb->query($sql);
+        $this->wpdb->show_errors($show_errors);
+        $this->wpdb->query($this->wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($lockTimeoutRow->Value)));
     }
 
     /**
@@ -173,15 +170,14 @@ VALUES(
     public function releaseLock()
     {
         $delimiter = self::LOCK_ID_DELIMITER;
-        $wpdb      = $this->getWpdb();
         $sql       = "
 DELETE FROM 
-	{$wpdb->postmeta}
+	{$this->wpdb->postmeta}
 WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND 
 	meta_value LIKE '{$this->lockId}{$delimiter}%'";
-        $wpdb->query($sql);
+        $this->wpdb->query($sql);
     }
 }
 
