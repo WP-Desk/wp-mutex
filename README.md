@@ -6,8 +6,8 @@
 [![License](https://poser.pugx.org/wpdesk/wp-mutex/license)](https://packagist.org/packages/wpdesk/wp-mutex) 
 
 
-WordPress Library to display notices in admin area.
-===================================================
+wpdesk/wp-lock
+==============
 
 wp-mutex is a simple library for WordPress plugins to help executing critical code in concurrent situations.
 
