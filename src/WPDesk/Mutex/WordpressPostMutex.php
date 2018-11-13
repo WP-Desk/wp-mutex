@@ -2,23 +2,24 @@
 
 namespace WPDesk\Mutex;
 
-
-class WordpressPostMutex
+class WordpressPostMutex implements Mutex
 {
+
+    use WordpressWpdb;
 
     const LOCK_ID_DELIMITER = '_';
 
     /** @var int Post id */
     private $postId;
 
-    /** @var wpdb Database handle */
-    private $wpdb;
-
     /** @var string Name of the resource to lock */
     private $lockName;
 
     /** @var int Lock timeout in seconds */
     private $timeout;
+
+    /** @var int Wait for lock timeout in seconds */
+    private $waitForLockTimeout;
 
     /** @var string Unique lock id */
     private $lockId;
@@ -30,15 +31,14 @@ class WordpressPostMutex
      * @param string $lock_name Name of the resource to lock
      * @param int $timeout Lock timeout in seconds
      */
-    public function __construct($post_id, $lock_name = '_mutex', $timeout = 5)
+    public function __construct($post_id, $lock_name = '_mutex', $timeout = 5, $waitForLockTimeout = 5)
     {
-        global $wpdb;
-
-        $this->postId   = intval($post_id);
-        $this->wpdb     = $wpdb;
-        $this->lockName = $wpdb->_real_escape($lock_name);
-        $this->timeout  = intval($timeout);
-        $this->lockId   = uniqid('', true);
+        $this->wpdb               = $this->getWpdbFromGlobal();
+        $this->postId             = intval($post_id);
+        $this->lockName           = $this->wpdb->_real_escape($lock_name);
+        $this->timeout            = intval($timeout);
+        $this->waitForLockTimeout = intval($waitForLockTimeout);
+        $this->lockId             = uniqid('', true);
     }
 
     /**
@@ -110,8 +110,7 @@ WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND
 	meta_value LIKE '{$this->lockId}{$delimiter}%' AND
-	meta_id <> $used_lock
-";
+	meta_id <> $used_lock";
         $this->wpdb->query($sql);
     }
 
@@ -124,6 +123,10 @@ WHERE
     {
         $lock_id = $this->lockId . self::LOCK_ID_DELIMITER;
 
+        $show_errors    = $this->wpdb->hide_errors();
+        $lockTimeoutRow = $this->wpdb->get_row("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
+        $this->wpdb->query($this->wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($this->waitForLockTimeout)));
+
         $sql = "
 INSERT INTO
 	{$this->wpdb->postmeta}(`meta_key`, `post_id`, `meta_value`)
@@ -131,10 +134,10 @@ VALUES(
 	'{$this->lockName}',
 	{$this->postId},
 	CONCAT('{$lock_id}', UNIX_TIMESTAMP() + {$this->timeout})
-);
-
-";
+)";
         $this->wpdb->query($sql);
+        $this->wpdb->show_errors($show_errors);
+        $this->wpdb->query($this->wpdb->prepare('SET innodb_lock_wait_timeout=%d', array($lockTimeoutRow->Value)));
     }
 
     /**
@@ -173,8 +176,7 @@ DELETE FROM
 WHERE
 	meta_key = '{$this->lockName}' AND 
 	post_id = {$this->postId} AND 
-	meta_value LIKE '{$this->lockId}{$delimiter}%'
-";
+	meta_value LIKE '{$this->lockId}{$delimiter}%'";
         $this->wpdb->query($sql);
     }
 }

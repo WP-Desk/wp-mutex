@@ -163,10 +163,6 @@ integration test php5-6:
   <<: *job-test-integration-template-fast
   image: wpdesknet/phpunit-woocommerce:3-0
 
-integration test php5-5:
-  <<: *job-test-integration-template-fast
-  image: wpdesknet/phpunit-woocommerce:4-0
-
 integration test current woocommerce:
   <<: *job-test-integration-template-fast
   image: wpdesknet/phpunit-woocommerce:0-0
