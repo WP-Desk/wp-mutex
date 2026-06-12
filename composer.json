@@ -1,18 +1,18 @@
 {
     "name": "wpdesk/wp-mutex",
     "description": "Library for locking in Wordpress.",
-    "license": "MIT",
     "keywords": ["wordpress", "mutex", "lock"],
     "homepage": "https://gitlab.com/wpdesk/wp-mutex",
     "minimum-stability": "stable",
+    "license": "MIT",
     "authors": [
         {
-            "name": "dyszczo",
-            "email": "dyszczo@wpdesk.net"
+            "name": "WP Desk",
+            "homepage": "https://wpdesk.net"
         },
         {
-            "name": "grola",
-            "email": "grola@wpdesk.net"
+            "name": "Octolize",
+            "homepage": "https://octolize.com"
         }
     ],
     "require": {
