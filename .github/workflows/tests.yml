@@ -7,9 +7,12 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+
 jobs:
-  tests:
-    name: PHP ${{ matrix.php }}
+  unit-tests:
+    name: Unit tests / PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -17,7 +20,7 @@ jobs:
       matrix:
         php:
           - '7.4'
-          - '8.3'
+          - '8.4'
 
     steps:
       - name: Checkout
@@ -38,18 +41,68 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
           restore-keys: |
             ${{ runner.os }}-php-${{ matrix.php }}-composer-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Run tests
-        run: composer test
+      - name: Run unit tests
+        run: composer test:unit
+
+  integration-tests:
+    name: Integration tests / PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.4'
+          - '8.4'
+
+    services:
+      database:
+        image: mariadb:10.11
+        env:
+          MARIADB_DATABASE: wptest
+          MARIADB_USER: wptest
+          MARIADB_PASSWORD: wptest
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=2s
+          --health-timeout=2s
+          --health-retries=30
+
+    env:
+      WP_TESTS_DB_NAME: wptest
+      WP_TESTS_DB_USER: wptest
+      WP_TESTS_DB_PASSWORD: wptest
+      WP_TESTS_DB_HOST: 127.0.0.1:3306
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run integration tests
+        run: composer test:integration
 
   static-analysis:
-    name: Static analysis
+    name: Quality checks
     runs-on: ubuntu-latest
 
     steps:
@@ -59,7 +112,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: none
           tools: composer:v2
 
@@ -71,15 +124,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-8.3-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.json') }}
           restore-keys: |
-            ${{ runner.os }}-php-8.3-composer-
+            ${{ runner.os }}-php-8.4-composer-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Run PHPStan
-        run: composer analyse
+      - name: Validate Composer metadata
+        run: composer validate --strict
 
       - name: Run PHPCS
         run: composer lint
+
+      - name: Run PHPStan
+        run: composer analyse

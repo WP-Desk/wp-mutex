@@ -1,22 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WPDesk\Mutex;
 
-interface Mutex
-{
+interface Mutex {
+	/** @return bool Whether this owner acquired the lock. */
+	public function acquireLock();
 
-    /**
-     * Tries to set lock and returns true if successful
-     *
-     * @return bool
-     */
-    public function acquireLock();
-
-    /**
-     * Releases lock
-     *
-     * @return void
-     */
-    public function releaseLock();
-
+	/** @return void */
+	public function releaseLock();
 }

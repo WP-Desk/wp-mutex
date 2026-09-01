@@ -1,18 +1,19 @@
 <?xml version="1.0"?>
-<ruleset name="WordPress Coding Standards for WP Desk Plugin">
-	<description>Sniffs for WordPress WPDesk plugins</description>
+<ruleset name="WP Desk WordPress library">
+    <file>src</file>
+    <file>tests</file>
 
-	<config name="installed_paths" value="vendor/wp-coding-standards/wpcs,vendor/wimg/php-compatibility" />
+    <arg name="extensions" value="php"/>
+    <arg value="sp"/>
+    <arg name="parallel" value="8"/>
+    <arg name="cache" value="/tmp/wp-mutex-phpcs-cache"/>
 
-    <rule ref="PHPCompatibility"/>
-	<config name="testVersion" value="5.5-"/>
+    <config name="minimum_supported_wp_version" value="6.0"/>
+    <config name="testVersion" value="7.4-"/>
 
-	<rule ref="WordPress"/>
+    <rule ref="WPDeskPlugin"/>
 
-	<config name="text_domain" value="wpdesk-plugin,default,s214-settings-demo"/>
-
-	<arg name="extensions" value="php"/>
-
-	<file>./classes</file>
-	<exclude-pattern>*/settings-api/*</exclude-pattern>
+    <rule ref="Squiz.Commenting.ClassComment.Missing">
+        <severity>0</severity>
+    </rule>
 </ruleset>

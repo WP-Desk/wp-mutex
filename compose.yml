@@ -1,0 +1,15 @@
+services:
+  database:
+    image: mariadb:10.11
+    environment:
+      MARIADB_DATABASE: wptest
+      MARIADB_USER: wptest
+      MARIADB_PASSWORD: wptest
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "33060:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

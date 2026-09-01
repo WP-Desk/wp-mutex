@@ -1,0 +1,27 @@
+# Changelog
+
+## 2.0.0 - Unreleased
+
+### Changed
+
+- Raised the minimum PHP version from 5.6 to 7.4.
+- Modernized the WordPress/PHPUnit test environment and moved CI to GitHub Actions with MariaDB 10.11.
+- Added WP Desk coding standards, PHPStan, and Rector checks.
+- Made MySQL mutex acquisition idempotent per object and distinguished contention from database failure.
+- Preserved the database connection that owns a MySQL advisory lock through release.
+- Reworked the postmeta mutex as an atomic, expiring persistent lease protected by a short advisory guard.
+- Made postmeta lease expiry use database time and retained compatibility with active version 1 lock rows.
+- Fixed helper storage so failed acquisitions are not recorded and repeated helper acquisition does not leak MySQL lock reference counts.
+
+### Added
+
+- `LockKey`, an opaque serializable ownership handle for deferred work.
+- `ExpiringMutex` and owner-aware lease refresh.
+- Dedicated mutex acquisition and release exceptions.
+- Behavioral tests using independent database connections.
+
+### Compatibility
+
+- Existing mutex classes, constructors, WooCommerce order factories, interface methods, and global helper names remain available.
+- `WordpressPostMutex` remains supported for order-scoped and cross-request use.
+- Consumers must now handle database failures separately from ordinary contention.
