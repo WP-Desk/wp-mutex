@@ -1,0 +1,9 @@
+parameters:
+    level: 5
+    scanFiles:
+        - vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+    paths:
+        - src
+    tmpDir: /tmp/wp-mutex-phpstan
+    parallel:
+        maximumNumberOfProcesses: 1

@@ -4,5 +4,5 @@ declare(strict_types=1);
 
 namespace WPDesk\Mutex;
 
-class MutexNotFoundInStorage extends MutexException {
+class MutexAcquireException extends MutexException {
 }

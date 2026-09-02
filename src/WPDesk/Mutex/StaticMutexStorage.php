@@ -1,47 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WPDesk\Mutex;
 
-class StaticMutexStorage implements MutexStorage
-{
+class StaticMutexStorage implements MutexStorage {
 
-    /**
-     * @var Mutex[]
-     */
-    public static $mutexStorage;
+	/** @var Mutex[] */
+	public static array $mutexStorage = [];
 
-    /**
-     * Add to storage.
-     *
-     * @param string $name
-     * @param Mutex $mutex
-     */
-    public function addToStorage($name, $mutex)
-    {
-        self::$mutexStorage[$name] = $mutex;
-    }
+	public function addToStorage( string $name, Mutex $mutex ): void {
+		self::$mutexStorage[ $name ] = $mutex;
+	}
 
-    /**
-     * @param string $name
-     *
-     * @return null|Mutex
-     */
-    public function getFromStorage($name)
-    {
-        return isset(self::$mutexStorage[$name]) ? self::$mutexStorage[$name] : null;
-    }
+	public function getFromStorage( string $name ): ?Mutex {
+		return self::$mutexStorage[ $name ] ?? null;
+	}
 
-    /**
-     * @param string $name
-     *
-     * @return void
-     */
-    public function removeFromStorage($name)
-    {
-        if (isset(self::$mutexStorage[$name])) {
-            unset(self::$mutexStorage[$name]);
-        } else {
-            throw new MutexNotFoundInStorage();
-        }
-    }
+	public function removeFromStorage( string $name ): void {
+		if ( isset( self::$mutexStorage[ $name ] ) ) {
+			unset( self::$mutexStorage[ $name ] );
+		} else {
+			throw new MutexNotFoundInStorage();
+		}
+	}
 }
