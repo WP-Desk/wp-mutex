@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace WPDesk\Mutex\Tests\Integration;
 
 use WPDesk\Mutex\LockKey;
-use WPDesk\Mutex\WordpressPostMutex;
+use WPDesk\Mutex\WordpressPostLease as WordpressPostMutex;
 
-final class WordpressPostMutexTest extends \WP_UnitTestCase {
+final class WordpressPostLeaseTest extends \WP_UnitTestCase {
 	/** @var string[] */
 	private $resources = [];
 
@@ -38,6 +38,19 @@ final class WordpressPostMutexTest extends \WP_UnitTestCase {
 			$contender->releaseLock();
 			$ownerDb->close();
 			$otherDb->close();
+		}
+	}
+
+	public function test_lease_does_not_require_mysql_advisory_locks(): void {
+		$resource = $this->resource( 'post-without-advisory-locks' );
+		$wpdb     = \wp_mutex_test_database_without_advisory_locks();
+		$lease    = new WordpressPostMutex( 1, $resource, 30, 0, $wpdb );
+
+		try {
+			self::assertTrue( $lease->acquireLock() );
+			$lease->releaseLock();
+		} finally {
+			$wpdb->close();
 		}
 	}
 

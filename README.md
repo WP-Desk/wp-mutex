@@ -47,18 +47,19 @@ try {
 
 The second constructor argument is the maximum number of seconds to wait. Use `0` for non-blocking webhook and callback handling. Repeated acquisition on the same mutex object is idempotent and requires one release. Locks are released automatically by MySQL when their owning connection closes.
 
-### `WordpressPostMutex`
+### `WordpressPostLease`
 
-Use it when ownership must survive beyond the acquiring request. The lease is stored in postmeta with an opaque owner token and database-time expiry. A short MySQL advisory guard protects only lease mutations; no connection lock is held for the lifetime of the lease.
+Use it for persistent, best-effort deduplication when ownership must survive beyond the acquiring request. The lease is stored in postmeta with an opaque owner token and database-time expiry.
+
+WordPress postmeta does not enforce uniqueness for a post and meta key. Two first acquisitions executing simultaneously may therefore both succeed. Use `WordpressMySQLLockMutex` when strict mutual exclusion is required.
 
 ```php
-use WPDesk\Mutex\WordpressPostMutex;
+use WPDesk\Mutex\WordpressPostLease;
 
-$lease = new WordpressPostMutex(
+$lease = new WordpressPostLease(
 	123,                 // Storage post/order ID.
 	'price-import',      // Resource name.
-	300,                 // Lease TTL in seconds.
-	0                    // Guard wait timeout.
+	300                  // Lease TTL in seconds.
 );
 
 if ( ! $lease->acquireLock() ) {
@@ -80,9 +81,9 @@ Always check the result of `acquireLock()` and release from `finally` for same-r
 
 ```php
 use WPDesk\Mutex\LockKey;
-use WPDesk\Mutex\WordpressPostMutex;
+use WPDesk\Mutex\WordpressPostLease;
 
-$lease = new WordpressPostMutex( 1, 'omnibus-batch', DAY_IN_SECONDS, 0 );
+$lease = new WordpressPostLease( 1, 'omnibus-batch', DAY_IN_SECONDS );
 
 if ( $lease->acquireLock() ) {
 	$queue->add(
@@ -98,7 +99,7 @@ The deferred handler resumes the same owner:
 
 ```php
 $key   = LockKey::fromString( $lock_key );
-$lease = WordpressPostMutex::fromKey( 1, $key, DAY_IN_SECONDS, 0 );
+$lease = WordpressPostLease::fromKey( 1, $key, DAY_IN_SECONDS );
 
 try {
 	// Process deferred work.
@@ -112,7 +113,7 @@ Release and refresh match both the resource and owner token. A delayed stale wor
 
 ## Failures and contention
 
-`acquireLock()` returns `false` when another owner holds the resource or when the short post-lease guard is contended. Database/query failures throw a `MutexException` subtype:
+`acquireLock()` returns `false` when it observes another active owner. Database/query failures throw a `MutexException` subtype:
 
 - `MutexAcquireException` for acquisition failures;
 - `MutexReleaseException` for release failures.
@@ -125,10 +126,12 @@ The existing order factories remain available:
 
 ```php
 $mysql_mutex = WordpressMySQLLockMutex::fromOrder( $order, ':payment', 0 );
-$post_lease  = WordpressPostMutex::fromOrder( $order, '_background_job', 300 );
+$post_lease  = WordpressPostLease::fromOrder( $order, '_background_job', 300 );
 ```
 
 The global `wpdesk_create_mysql_lock*()`, `wpdesk_acquire_lock()`, and `wpdesk_release_lock()` helpers are deprecated compatibility shims. New code must keep the mutex object explicitly so ownership and `finally` release remain visible.
+
+`WordpressPostMutex` is also deprecated and remains as a compatibility subclass. For source compatibility, the former guard-wait constructor argument is accepted but ignored by both names.
 
 ## Development
 

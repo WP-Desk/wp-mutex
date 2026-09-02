@@ -12,7 +12,8 @@
 - Added WP Desk coding standards, PHPStan, and Rector checks.
 - Made MySQL mutex acquisition idempotent per object and distinguished contention from database failure.
 - Preserved the database connection that owns a MySQL advisory lock through release.
-- Reworked the postmeta mutex as an atomic, expiring persistent lease protected by a short advisory guard.
+- Added `WordpressPostLease` for persistent, best-effort postmeta deduplication without an advisory-lock dependency.
+- Deprecated `WordpressPostMutex`; it remains as a compatibility subclass of `WordpressPostLease`.
 - Made postmeta lease expiry use database time and retained compatibility with active version 1 lock rows.
 - Fixed helper storage so failed acquisitions are not recorded and repeated helper acquisition does not leak MySQL lock reference counts.
 
@@ -26,5 +27,5 @@
 ### Compatibility
 
 - Existing mutex classes, constructors, WooCommerce order factories, interface methods, and deprecated global helper names remain available.
-- `WordpressPostMutex` remains supported for order-scoped and cross-request use.
+- `WordpressPostMutex` remains available for backward compatibility; new code should use `WordpressPostLease`.
 - Consumers must now handle database failures separately from ordinary contention.
