@@ -9,20 +9,15 @@ class WordpressPostMutex implements ExpiringMutex {
 
 	private const VALUE_DELIMITER = '|';
 
-	/** @var \wpdb */
-	private $wpdb;
+	private \wpdb $wpdb;
 
-	/** @var int */
-	private $postId;
+	private int $postId;
 
-	/** @var int */
-	private $timeout;
+	private int $timeout;
 
-	/** @var int */
-	private $waitForLockTimeout;
+	private int $waitForLockTimeout;
 
-	/** @var LockKey */
-	private $key;
+	private LockKey $key;
 
 	public function __construct( int $post_id, string $lock_name = '_mutex', int $timeout = 5, int $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
 		$this->initialize(

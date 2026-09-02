@@ -6,10 +6,8 @@ namespace WPDesk\Mutex;
 
 class StaticMutexStorage implements MutexStorage {
 
-	/**
-	 * @var Mutex[]
-	 */
-	public static $mutexStorage = [];
+	/** @var Mutex[] */
+	public static array $mutexStorage = [];
 
 	public function addToStorage( string $name, Mutex $mutex ): void {
 		self::$mutexStorage[ $name ] = $mutex;

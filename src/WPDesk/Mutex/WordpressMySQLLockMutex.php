@@ -9,17 +9,13 @@ class WordpressMySQLLockMutex implements Mutex {
 
 	private const MAX_LOCK_NAME_BYTES = 64;
 
-	/** @var \wpdb */
-	private $wpdb;
+	private \wpdb $wpdb;
 
-	/** @var string */
-	private $lockName;
+	private string $lockName;
 
-	/** @var int */
-	private $waitForLockTimeout;
+	private int $waitForLockTimeout;
 
-	/** @var bool */
-	private $acquired = false;
+	private bool $acquired = false;
 
 	public function __construct( string $lockName = '_mutex', int $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
 		if ( '' === $lockName || strlen( $lockName ) > self::MAX_LOCK_NAME_BYTES ) {

@@ -7,11 +7,9 @@ namespace WPDesk\Mutex;
 final class LockKey {
 	private const TOKEN_BYTES = 16;
 
-	/** @var string */
-	private $resource;
+	private string $resource;
 
-	/** @var string */
-	private $token;
+	private string $token;
 
 	private function __construct( string $resource, string $token ) {
 		if ( '' === $resource ) {
