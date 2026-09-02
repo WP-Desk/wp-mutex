@@ -19,7 +19,7 @@ The integration suite runs against WordPress 6.9 and MariaDB 10.11.
 composer require wpdesk/wp-mutex:^2.0
 ```
 
-Composer autoloading is recommended. A manual installation may load `src/init.php`.
+The library is loaded through Composer autoloading.
 
 ## Choosing an implementation
 
@@ -128,7 +128,7 @@ $mysql_mutex = WordpressMySQLLockMutex::fromOrder( $order, ':payment', 0 );
 $post_lease  = WordpressPostMutex::fromOrder( $order, '_background_job', 300 );
 ```
 
-The global `wpdesk_create_mysql_lock*()`, `wpdesk_acquire_lock()`, and `wpdesk_release_lock()` helpers are retained for compatibility. New code should generally keep the mutex object explicitly so ownership and `finally` release remain visible.
+The global `wpdesk_create_mysql_lock*()`, `wpdesk_acquire_lock()`, and `wpdesk_release_lock()` helpers are deprecated compatibility shims. New code must keep the mutex object explicitly so ownership and `finally` release remain visible.
 
 ## Development
 

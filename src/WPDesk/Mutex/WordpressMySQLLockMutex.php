@@ -21,26 +21,25 @@ class WordpressMySQLLockMutex implements Mutex {
 	/** @var bool */
 	private $acquired = false;
 
-	public function __construct( $lockName = '_mutex', $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
-		$lockName = (string) $lockName;
+	public function __construct( string $lockName = '_mutex', int $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
 		if ( '' === $lockName || strlen( $lockName ) > self::MAX_LOCK_NAME_BYTES ) {
 			throw new \InvalidArgumentException( 'A MySQL lock name must contain between 1 and 64 bytes.' );
 		}
 
-		if ( (int) $waitForLockTimeout < 0 ) {
+		if ( $waitForLockTimeout < 0 ) {
 			throw new \InvalidArgumentException( 'The lock wait timeout cannot be negative.' );
 		}
 
 		$this->wpdb               = $wpdb ?? $this->getWpdbFromGlobal();
 		$this->lockName           = $lockName;
-		$this->waitForLockTimeout = (int) $waitForLockTimeout;
+		$this->waitForLockTimeout = $waitForLockTimeout;
 	}
 
-	public static function fromOrder( \WC_Order $order, $lockName = '_mutex', $waitForLockTimeout = 5 ): self {
+	public static function fromOrder( \WC_Order $order, string $lockName = '_mutex', int $waitForLockTimeout = 5 ): self {
 		return new self( 'order' . (string) $order->get_id() . $lockName, $waitForLockTimeout );
 	}
 
-	public function acquireLock() {
+	public function acquireLock(): bool {
 		if ( $this->acquired ) {
 			return true;
 		}
@@ -61,7 +60,7 @@ class WordpressMySQLLockMutex implements Mutex {
 		throw new MutexAcquireException( $this->databaseError( 'Unable to acquire the MySQL lock.' ) );
 	}
 
-	public function releaseLock() {
+	public function releaseLock(): void {
 		if ( ! $this->acquired ) {
 			return;
 		}

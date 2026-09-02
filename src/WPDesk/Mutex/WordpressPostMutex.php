@@ -24,17 +24,17 @@ class WordpressPostMutex implements ExpiringMutex {
 	/** @var LockKey */
 	private $key;
 
-	public function __construct( $post_id, $lock_name = '_mutex', $timeout = 5, $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
+	public function __construct( int $post_id, string $lock_name = '_mutex', int $timeout = 5, int $waitForLockTimeout = 5, ?\wpdb $wpdb = null ) {
 		$this->initialize(
-			(int) $post_id,
-			LockKey::create( (string) $lock_name ),
-			(int) $timeout,
-			(int) $waitForLockTimeout,
+			$post_id,
+			LockKey::create( $lock_name ),
+			$timeout,
+			$waitForLockTimeout,
 			$wpdb
 		);
 	}
 
-	public static function fromOrder( \WC_Order $order, $lock_name = '_mutex', $timeout = 5 ): self {
+	public static function fromOrder( \WC_Order $order, string $lock_name = '_mutex', int $timeout = 5 ): self {
 		return new self( $order->get_id(), $lock_name, $timeout );
 	}
 
@@ -49,7 +49,7 @@ class WordpressPostMutex implements ExpiringMutex {
 		return $this->key;
 	}
 
-	public function acquireLock() {
+	public function acquireLock(): bool {
 		return $this->withGuard(
 			function (): bool {
 				$this->deleteExpiredLocks();
@@ -109,7 +109,7 @@ class WordpressPostMutex implements ExpiringMutex {
 		);
 	}
 
-	public function releaseLock() {
+	public function releaseLock(): void {
 		$released = $this->withGuard(
 			function (): bool {
 				$sql = $this->wpdb->prepare(
